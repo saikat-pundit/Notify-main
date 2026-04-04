@@ -1,8 +1,5 @@
 package com.example.gistapp
-import org.json.JSONObject
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
-import com.google.android.material.bottomnavigation.BottomNavigationView
+
 import android.app.DatePickerDialog
 import android.content.Context
 import android.graphics.Color
@@ -18,23 +15,28 @@ import android.text.style.ForegroundColorSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.Animation
+import android.view.animation.LinearInterpolator
+import android.view.animation.RotateAnimation
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.work.*
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.navigation.NavigationView
 import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import java.util.concurrent.TimeUnit
-import android.view.animation.Animation
-import android.view.animation.LinearInterpolator
-import android.view.animation.RotateAnimation
+
 data class NotificationRecord(
     val id: String,
     val app: String,
@@ -44,13 +46,8 @@ data class NotificationRecord(
 )
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var notificationContainer: LinearLayout
-    private lateinit var controllerContainer: LinearLayout
-    private lateinit var bottomNav: BottomNavigationView
-    private lateinit var spinnerControllerDevice: Spinner
-    private lateinit var spinnerCommand: Spinner
-    private lateinit var etMessage: EditText
-    private lateinit var btnActivate: Button
+    
+    // --- UI Variables ---
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var navView: NavigationView
     private lateinit var listView: ListView
@@ -66,14 +63,23 @@ class MainActivity : AppCompatActivity() {
     private lateinit var etSearch: EditText
     private lateinit var tvMatchCount: TextView
     private lateinit var btnCloseSearch: ImageButton
+
+    // Tabs & Controller UI
+    private lateinit var notificationContainer: View
+    private lateinit var controllerContainer: LinearLayout
+    private lateinit var bottomNav: BottomNavigationView
+    private lateinit var spinnerControllerDevice: Spinner
+    private lateinit var spinnerCommand: Spinner
+    private lateinit var etMessage: EditText
+    private lateinit var btnActivate: Button
     
+    // --- State & Network Variables ---
     private val client = OkHttpClient()
-    
     private var allRecords = listOf<NotificationRecord>()
     private var currentCategory = "All Notifications"
     private var currentDevice = "Show all"
-    private var currentSearchQuery = "" 
-    private var currentDateFilter = "" // NEW: Stores the selected date
+    private var currentSearchQuery = ""
+    private var currentDateFilter = ""
 
     private val autoRefreshHandler = Handler(Looper.getMainLooper())
     private val autoRefreshRunnable = object : Runnable {
@@ -87,6 +93,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         
+        // ==========================================
+        // 1. BIND ALL VIEWS
+        // ==========================================
         drawerLayout = findViewById(R.id.drawerLayout)
         navView = findViewById(R.id.navView)
         listView = findViewById(R.id.gistListView)
@@ -102,12 +111,65 @@ class MainActivity : AppCompatActivity() {
         tvMatchCount = findViewById(R.id.tvMatchCount)
         btnCloseSearch = findViewById(R.id.btnCloseSearch)
 
-        // 1. Tapping the Title Bar instantly scrolls to the top
+        notificationContainer = findViewById(R.id.notificationContainer)
+        controllerContainer = findViewById(R.id.controllerContainer)
+        bottomNav = findViewById(R.id.bottomNav)
+        spinnerControllerDevice = findViewById(R.id.spinnerControllerDevice)
+        spinnerCommand = findViewById(R.id.spinnerCommand)
+        etMessage = findViewById(R.id.etMessage)
+        btnActivate = findViewById(R.id.btnActivate)
+
+        // ==========================================
+        // 2. SETUP TABS & CONTROLLER LOGIC
+        // ==========================================
+        
+        // Setup Bottom Navigation logic
+        bottomNav.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.tab_notifications -> {
+                    notificationContainer.visibility = View.VISIBLE
+                    controllerContainer.visibility = View.GONE
+                    true
+                }
+                R.id.tab_controller -> {
+                    notificationContainer.visibility = View.GONE
+                    controllerContainer.visibility = View.VISIBLE
+                    true
+                }
+                else -> false
+            }
+        }
+
+        // Setup Command Spinner Options
+        val commands = listOf("GENERAL", "SILENT", "RING", "MESSAGE")
+        spinnerCommand.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, commands)
+
+        // Show/Hide Message Box based on command selected
+        spinnerCommand.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                if (commands[position] == "MESSAGE") {
+                    etMessage.visibility = View.VISIBLE
+                } else {
+                    etMessage.visibility = View.GONE
+                    etMessage.text.clear()
+                }
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+
+        // Activate Button Click Listener
+        btnActivate.setOnClickListener {
+            activateCommand()
+        }
+
+        // ==========================================
+        // 3. SETUP NOTIFICATION UI LOGIC
+        // ==========================================
+        
         tvHeaderTitle.setOnClickListener {
             listView.smoothScrollToPosition(0)
         }
 
-        // 2. Calendar Date Picker Setup
         btnDateFilter.setOnClickListener {
             val calendar = Calendar.getInstance()
             val dpd = DatePickerDialog(this, { _, year, month, day ->
@@ -116,22 +178,20 @@ class MainActivity : AppCompatActivity() {
                 val format = SimpleDateFormat("dd MMM", Locale.US)
                 
                 currentDateFilter = format.format(selectedCal.time).lowercase()
-                btnDateFilter.setColorFilter(Color.parseColor("#64FFDA")) // Turn icon Mint Green
+                btnDateFilter.setColorFilter(Color.parseColor("#64FFDA"))
                 Toast.makeText(this, "Filtering by: $currentDateFilter", Toast.LENGTH_SHORT).show()
                 updateListView(forceScrollTop = true)
                 
             }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH))
             
-            // Add a "Clear" button to the Calendar to remove the filter
             dpd.setButton(DatePickerDialog.BUTTON_NEUTRAL, "Clear Filter") { _, _ ->
                 currentDateFilter = ""
-                btnDateFilter.setColorFilter(Color.parseColor("#FFFFFF")) // Revert icon to White
+                btnDateFilter.setColorFilter(Color.parseColor("#FFFFFF"))
                 updateListView(forceScrollTop = true)
             }
             dpd.show()
         }
         
-        // Search Animations and Logic
         fabSearch.setOnClickListener {
             fabSearch.animate().scaleX(0f).scaleY(0f).setDuration(200).withEndAction {
                 fabSearch.visibility = View.GONE
@@ -161,7 +221,7 @@ class MainActivity : AppCompatActivity() {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 currentSearchQuery = s.toString().trim()
-                updateListView(forceScrollTop = true) // Scroll to top when searching
+                updateListView(forceScrollTop = true)
             }
             override fun afterTextChanged(s: Editable?) {}
         })
@@ -178,7 +238,7 @@ class MainActivity : AppCompatActivity() {
             currentCategory = menuItem.title.toString()
             tvHeaderTitle.text = currentCategory
             drawerLayout.closeDrawer(GravityCompat.START)
-            updateListView(forceScrollTop = true) // Scroll to top on category change
+            updateListView(forceScrollTop = true)
             true
         }
 
@@ -187,12 +247,15 @@ class MainActivity : AppCompatActivity() {
                 val selected = parent?.getItemAtPosition(position).toString()
                 if (currentDevice != selected) {
                     currentDevice = selected
-                    updateListView(forceScrollTop = true) // Scroll to top on device change
+                    updateListView(forceScrollTop = true)
                 }
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
+        // ==========================================
+        // 4. INITIALIZE DATA & WORKER
+        // ==========================================
         fetchGistData()
         setupBackgroundWorker()
     }
@@ -207,15 +270,80 @@ class MainActivity : AppCompatActivity() {
         autoRefreshHandler.removeCallbacks(autoRefreshRunnable)
     }
 
+    // ==========================================
+    // CONTROLLER LOGIC (NEW)
+    // ==========================================
+    private fun activateCommand() {
+        val device = spinnerControllerDevice.selectedItem?.toString() ?: return
+        val command = spinnerCommand.selectedItem?.toString() ?: return
+        var finalCommand = "$device:$command"
+
+        if (command == "MESSAGE") {
+            val msg = etMessage.text.toString().trim()
+            if (msg.isEmpty()) {
+                Toast.makeText(this, "Please enter a message to send", Toast.LENGTH_SHORT).show()
+                return
+            }
+            finalCommand = "$device:MESSAGE:$msg"
+        }
+
+        // Lock button while loading
+        btnActivate.isEnabled = false
+        btnActivate.text = "Activating..."
+
+        // Build the JSON payload for GitHub Gist API
+        val json = JSONObject().apply {
+            put("files", JSONObject().apply {
+                put("command.txt", JSONObject().apply {
+                    put("content", finalCommand)
+                })
+            })
+        }
+
+        val requestBody = json.toString().toRequestBody("application/json".toMediaType())
+        
+        // Patch Request
+        val request = Request.Builder()
+            .url("https://api.github.com/gists/ccc67afe0ea74bc98cfd654f5fa9905b")
+            .patch(requestBody)
+            .addHeader("Authorization", "Bearer ${BuildConfig.COMMAND_GIST_TOKEN}")
+            .addHeader("Accept", "application/vnd.github.v3+json")
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, "Network Failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                    btnActivate.isEnabled = true
+                    btnActivate.text = "ACTIVATE"
+                }
+            }
+            
+            override fun onResponse(call: Call, response: Response) {
+                runOnUiThread {
+                    if (response.isSuccessful) {
+                        Toast.makeText(this@MainActivity, "Your Command has been activated.", Toast.LENGTH_LONG).show()
+                        etMessage.text.clear()
+                    } else {
+                        Toast.makeText(this@MainActivity, "Failed to save: Error ${response.code}", Toast.LENGTH_LONG).show()
+                    }
+                    btnActivate.isEnabled = true
+                    btnActivate.text = "ACTIVATE"
+                }
+            }
+        })
+    }
+
+    // ==========================================
+    // DATA FETCHING & UI UPDATES
+    // ==========================================
     private fun fetchGistData() {
-        // 1. START THE INFINITE SPIN ON THE UI THREAD
         runOnUiThread {
-            // Only start spinning if it isn't already spinning from a background refresh
             if (btnRefresh.animation == null) {
                 val rotate = RotateAnimation(0f, 360f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f)
-                rotate.duration = 1000 // 1 second per full rotation
+                rotate.duration = 1000
                 rotate.repeatCount = Animation.INFINITE
-                rotate.interpolator = LinearInterpolator() // Makes it smooth instead of pausing at the end of each spin
+                rotate.interpolator = LinearInterpolator()
                 btnRefresh.startAnimation(rotate)
             }
         }
@@ -225,7 +353,6 @@ class MainActivity : AppCompatActivity() {
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                // 2. STOP SPINNING IF THE INTERNET FAILS
                 runOnUiThread {
                     btnRefresh.clearAnimation()
                 }
@@ -243,10 +370,8 @@ class MainActivity : AppCompatActivity() {
 
                 runOnUiThread {
                     updateSidebarMenu()
-                    updateDeviceSpinner()
+                    updateDeviceSpinner() // This now updates BOTH spinners
                     updateListView(forceScrollTop = false)
-                    
-                    // 3. STOP SPINNING ONCE THE DATA IS FULLY LOADED ON SCREEN
                     btnRefresh.clearAnimation()
                 }
             }
@@ -263,8 +388,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateDeviceSpinner() {
         val devices = mutableListOf("Show all")
-        devices.addAll(allRecords.map { it.id }.distinct())
+        val uniqueDevices = allRecords.map { it.id }.distinct()
+        devices.addAll(uniqueDevices)
 
+        // 1. Setup Header Filter Spinner
         var selectedIndex = devices.indexOf(currentDevice)
         if (selectedIndex == -1) {
             currentDevice = "Show all"
@@ -275,15 +402,19 @@ class MainActivity : AppCompatActivity() {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerDevice.adapter = adapter
         spinnerDevice.setSelection(selectedIndex, false)
+
+        // 2. Setup Controller Target Spinner (Only if there are unique devices)
+        if (uniqueDevices.isNotEmpty()) {
+            val controllerAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, uniqueDevices)
+            spinnerControllerDevice.adapter = controllerAdapter
+        }
     }
 
-    // 3. Updated function to accept a "Force Jump to Top" trigger
     private fun updateListView(forceScrollTop: Boolean = false) {
         val currentPosition = listView.firstVisiblePosition
         val childView = listView.getChildAt(0)
         val topOffset = if (childView == null) 0 else childView.top - listView.paddingTop
 
-        // QUADRUPLE Filter: Category + Device + Date + Search
         val filteredRecords = allRecords.filter { record ->
             val matchesCategory = (currentCategory == "All Notifications" || record.app == currentCategory)
             val matchesDevice = (currentDevice == "Show all" || record.id == currentDevice)
@@ -310,7 +441,6 @@ class MainActivity : AppCompatActivity() {
         val adapter = NotificationAdapter(this@MainActivity, filteredRecords)
         listView.adapter = adapter
 
-        // Logic to instantly jump or smoothly restore position based on trigger
         if (forceScrollTop) {
             listView.setSelection(0)
         } else {
@@ -318,6 +448,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // ==========================================
+    // UTILITIES & HELPERS
+    // ==========================================
     private fun parseCSV(data: String): List<NotificationRecord> {
         val lines = data.lines().filter { it.contains(",") }
         val records = mutableListOf<NotificationRecord>()
@@ -400,6 +533,9 @@ class MainActivity : AppCompatActivity() {
         return spannable
     }
 
+    // ==========================================
+    // ADAPTER
+    // ==========================================
     inner class NotificationAdapter(context: AppCompatActivity, private val records: List<NotificationRecord>) :
         ArrayAdapter<NotificationRecord>(context, 0, records) {
         
@@ -411,7 +547,6 @@ class MainActivity : AppCompatActivity() {
             val tvApp = view.findViewById<TextView>(R.id.tvApp)
             val layoutTags = view.findViewById<LinearLayout>(R.id.layoutTags)
 
-            // Hide/Show Device WITH Highlights
             if (currentDevice == "Show all") {
                 tvDevice.visibility = View.VISIBLE
                 tvDevice.text = highlightText("Device: ${record.id}", currentSearchQuery)
