@@ -275,6 +275,13 @@ class MainActivity : AppCompatActivity() {
     // ==========================================
     private fun activateCommand() {
         val device = spinnerControllerDevice.selectedItem?.toString() ?: return
+        
+        // ADD THIS SAFETY CHECK:
+        if (device == "Select Device...") {
+            Toast.makeText(this, "Please select a valid device first", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
         val command = spinnerCommand.selectedItem?.toString() ?: return
         var finalCommand = "$device:$command"
 
@@ -391,37 +398,39 @@ class MainActivity : AppCompatActivity() {
         val uniqueDevices = allRecords.map { it.id }.distinct()
         devices.addAll(uniqueDevices)
 
-        // 1. Setup Header Filter Spinner
+        // 1. Setup Header Filter Spinner (REVERTED TO NORMAL)
         var selectedIndex = devices.indexOf(currentDevice)
         if (selectedIndex == -1) {
             currentDevice = "Show all"
             selectedIndex = 0
         }
-
-        val adapter = object : ArrayAdapter<String>(this, R.layout.spinner_item, devices) {
-    override fun isEnabled(position: Int): Boolean {
-        // Disable the item at position 0 ("Show all") so it cannot be clicked
-        return position != 0
-    }
-
-    override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
-        val view = super.getDropDownView(position, convertView, parent) as TextView
-        // Visually gray out the unselectable item so the user knows
-        if (position == 0) {
-            view.setTextColor(android.graphics.Color.GRAY)
-        } else {
-            view.setTextColor(android.graphics.Color.WHITE) // Or your standard text color
-        }
-        return view
-    }
-}
+        val adapter = ArrayAdapter(this, R.layout.spinner_item, devices)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerDevice.adapter = adapter
         spinnerDevice.setSelection(selectedIndex, false)
 
-        // 2. Setup Controller Target Spinner (Only if there are unique devices)
+        // 2. Setup Controller Target Spinner (WITH UNSELECTABLE PLACEHOLDER)
         if (uniqueDevices.isNotEmpty()) {
-            val controllerAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, uniqueDevices)
+            // Create a new list for the controller that starts with a hint
+            val controllerDevices = mutableListOf("Select Device...")
+            controllerDevices.addAll(uniqueDevices)
+
+            val controllerAdapter = object : ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, controllerDevices) {
+                override fun isEnabled(position: Int): Boolean {
+                    // Disable position 0 so "Select Device..." cannot be chosen as a real command
+                    return position != 0
+                }
+
+                override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+                    val view = super.getDropDownView(position, convertView, parent) as TextView
+                    if (position == 0) {
+                        view.setTextColor(android.graphics.Color.GRAY)
+                    } else {
+                        view.setTextColor(android.graphics.Color.BLACK) // Dropdown text usually needs to be black/dark depending on theme
+                    }
+                    return view
+                }
+            }
             spinnerControllerDevice.adapter = controllerAdapter
         }
     }
