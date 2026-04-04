@@ -398,7 +398,23 @@ class MainActivity : AppCompatActivity() {
             selectedIndex = 0
         }
 
-        val adapter = ArrayAdapter(this, R.layout.spinner_item, devices)
+        val adapter = object : ArrayAdapter<String>(this, R.layout.spinner_item, devices) {
+    override fun isEnabled(position: Int): Boolean {
+        // Disable the item at position 0 ("Show all") so it cannot be clicked
+        return position != 0
+    }
+
+    override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+        val view = super.getDropDownView(position, convertView, parent) as TextView
+        // Visually gray out the unselectable item so the user knows
+        if (position == 0) {
+            view.setTextColor(android.graphics.Color.GRAY)
+        } else {
+            view.setTextColor(android.graphics.Color.WHITE) // Or your standard text color
+        }
+        return view
+    }
+}
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerDevice.adapter = adapter
         spinnerDevice.setSelection(selectedIndex, false)
