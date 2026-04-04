@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.drawerlayout.widget.DrawerLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/drawerLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#121212">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp" 
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            android:gravity="center_vertical"
+            android:background="#1F1B24"
+            android:theme="@style/ThemeOverlay.AppCompat.Dark">
+
+            <ImageButton android:id="@+id/btnMenu" android:layout_width="36dp" android:layout_height="36dp" android:background="?android:attr/selectableItemBackgroundBorderless" android:src="@android:drawable/ic_menu_sort_by_size" android:tint="#FFFFFF" android:rotation="180" />
+            
+            <TextView android:id="@+id/tvHeaderTitle" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="All Notifications" android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold" android:layout_marginStart="12dp" android:gravity="center_vertical" android:clickable="true" android:focusable="true" android:background="?android:attr/selectableItemBackground"/>
+
+            <ImageButton
+                android:id="@+id/btnDateFilter"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_my_calendar"
+                android:tint="#FFFFFF" />
+
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="32dp" android:layout_marginEnd="12dp" android:background="@drawable/bg_spinner" android:paddingHorizontal="8dp" android:gravity="center">
+                <Spinner android:id="@+id/spinnerDevice" android:layout_width="wrap_content" android:layout_height="match_parent" android:backgroundTint="#64FFDA" android:popupBackground="#2C2C2C" />
+            </LinearLayout>
+
+            <ImageButton android:id="@+id/btnRefresh" android:layout_width="36dp" android:layout_height="36dp" android:background="?android:attr/selectableItemBackgroundBorderless" android:src="@android:drawable/ic_popup_sync" android:tint="#64FFDA" />
+        </LinearLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <ListView
+                android:id="@+id/gistListView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:divider="#333333"
+                android:dividerHeight="1dp"
+                android:clipToPadding="false"
+                android:paddingBottom="80dp"/>
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/fabSearch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentEnd="true"
+                android:layout_margin="16dp"
+                android:src="@android:drawable/ic_menu_search"
+                app:backgroundTint="#64FFDA"
+                app:tint="#121212" />
+
+            <LinearLayout
+                android:id="@+id/searchContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
+                android:background="#1F1B24"
+                android:orientation="horizontal"
+                android:padding="12dp"
+                android:gravity="center_vertical"
+                android:visibility="gone"
+                android:elevation="8dp">
+
+                <EditText
+                    android:id="@+id/etSearch"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_spinner"
+                    android:hint="Search notifications..."
+                    android:textColorHint="#9E9E9E"
+                    android:textColor="#FFFFFF"
+                    android:paddingHorizontal="16dp"
+                    android:inputType="text"
+                    android:maxLines="1"/>
+
+                <TextView android:id="@+id/tvMatchCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:textColor="#64FFDA" android:textSize="12sp" android:text="0 found"/>
+                <ImageButton android:id="@+id/btnCloseSearch" android:layout_width="36dp" android:layout_height="36dp" android:layout_marginStart="8dp" android:background="?android:attr/selectableItemBackgroundBorderless" android:src="@android:drawable/ic_menu_close_clear_cancel" android:tint="#FFFFFF" />
+            </LinearLayout>
+        </RelativeLayout>
+    </LinearLayout>
+
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/navView"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:background="#1F1B24"
+        app:itemTextColor="#FFFFFF"
+        app:itemIconTint="#64FFDA" />
+</androidx.drawerlayout.widget.DrawerLayout>
