@@ -133,12 +133,12 @@
             </RelativeLayout>
 
             <LinearLayout
-                android:id="@+id/controllerContainer"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:padding="24dp"
-                android:visibility="gone">
+            android:id="@+id/controllerContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center_vertical" android:padding="24dp"
+            android:visibility="gone">
 
                 <TextView 
                     android:layout_width="wrap_content" 
