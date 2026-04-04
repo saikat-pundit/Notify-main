@@ -142,7 +142,16 @@ class MainActivity : AppCompatActivity() {
 
         // Setup Command Spinner Options
         val commands = listOf("GENERAL", "SILENT", "RING", "MESSAGE")
-        spinnerCommand.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, commands)
+        val commandAdapter = object : ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, commands) {
+        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+        val view = super.getView(position, convertView, parent) as TextView
+        view.setTextColor(android.graphics.Color.WHITE)
+        view.setTypeface(null, android.graphics.Typeface.BOLD)
+        view.textSize = 16f
+        return view
+            }
+        }
+        spinnerCommand.adapter = commandAdapter
 
         // Show/Hide Message Box based on command selected
         spinnerCommand.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
@@ -416,22 +425,28 @@ class MainActivity : AppCompatActivity() {
             controllerDevices.addAll(uniqueDevices)
 
             val controllerAdapter = object : ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, controllerDevices) {
-                override fun isEnabled(position: Int): Boolean {
-                    // Disable position 0 so "Select Device..." cannot be chosen as a real command
-                    return position != 0
-                }
+    override fun isEnabled(position: Int): Boolean = position != 0
 
-                override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
-                    val view = super.getDropDownView(position, convertView, parent) as TextView
-                    if (position == 0) {
-                        view.setTextColor(android.graphics.Color.GRAY)
-                    } else {
-                        view.setTextColor(android.graphics.Color.BLACK) // Dropdown text usually needs to be black/dark depending on theme
-                    }
-                    return view
-                }
-            }
-            spinnerControllerDevice.adapter = controllerAdapter
+    override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+        val view = super.getDropDownView(position, convertView, parent) as TextView
+        view.setTextColor(if (position == 0) android.graphics.Color.GRAY else android.graphics.Color.BLACK)
+        return view
+    }
+
+    // ADD THIS NEW FUNCTION TO STYLE THE SELECTED TEXT
+    override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+        val view = super.getView(position, convertView, parent) as TextView
+        if (position == 0) {
+            view.setTextColor(android.graphics.Color.GRAY) // Hint remains gray
+        } else {
+            view.setTextColor(android.graphics.Color.WHITE) // Selected device becomes white & bold
+            view.setTypeface(null, android.graphics.Typeface.BOLD)
+        }
+        view.textSize = 16f
+        return view
+    }
+}
+spinnerControllerDevice.adapter = controllerAdapter
         }
     }
 
