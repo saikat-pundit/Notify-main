@@ -48,6 +48,7 @@ data class NotificationRecord(
 class MainActivity : AppCompatActivity() {
     
     // --- UI Variables ---
+    private lateinit var topAppBar: LinearLayout
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var navView: NavigationView
     private lateinit var listView: ListView
@@ -96,6 +97,7 @@ class MainActivity : AppCompatActivity() {
         // ==========================================
         // 1. BIND ALL VIEWS
         // ==========================================
+        topAppBar = findViewById(R.id.topAppBar)
         drawerLayout = findViewById(R.id.drawerLayout)
         navView = findViewById(R.id.navView)
         listView = findViewById(R.id.gistListView)
@@ -124,16 +126,19 @@ class MainActivity : AppCompatActivity() {
         // ==========================================
         
         // Setup Bottom Navigation logic
+        // Setup Bottom Navigation logic
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.tab_notifications -> {
                     notificationContainer.visibility = View.VISIBLE
                     controllerContainer.visibility = View.GONE
+                    topAppBar.visibility = View.VISIBLE // <-- SHOW top bar
                     true
                 }
                 R.id.tab_controller -> {
                     notificationContainer.visibility = View.GONE
                     controllerContainer.visibility = View.VISIBLE
+                    topAppBar.visibility = View.GONE // <-- HIDE top bar
                     true
                 }
                 else -> false
