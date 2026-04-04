@@ -1,0 +1,33 @@
+name: Extract Notify ZIP
+
+on:
+  push:
+    paths:
+      - 'Notify-main.zip' # Triggers when this specific zip is pushed
+
+jobs:
+  unzip-and-commit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract ZIP and flatten directory
+        run: |
+          # 1. Unzip the file quietly (-q)
+          unzip -q Notify-main.zip
+          
+          # 2. Move all contents from the mother folder to the root directory
+          # Using rsync ensures hidden files and folders are moved properly
+          rsync -a Notify-main/ ./
+          
+          # 3. Clean up the zip file and the now-empty mother folder
+          rm -rf Notify-main Notify-main.zip
+
+      - name: Commit and push extracted files
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: Extract Notify repo to root directory"
