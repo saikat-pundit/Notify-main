@@ -21,15 +21,27 @@ jobs:
           gradle-version: 8.5
 
       - name: Build APK
+        env:
+          # Pass the secret to Gradle
+          COMMAND_GIST_TOKEN: ${{ secrets.COMMAND_GIST_TOKEN }}
         run: gradle :app:assembleDebug
 
-      # NEW STEP: Rename the default app-debug.apk to Notify.apk
       - name: Rename APK
         run: mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/Notify.apk
 
-      - name: Upload APK
+      - name: Upload APK as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Notify-App-Build
-          # Point the uploader to the newly renamed file
           path: app/build/outputs/apk/debug/Notify.apk
+
+      # NEW STEP: Create/Update GitHub Release
+      - name: Publish to GitHub Releases
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: latest
+          name: Latest Notify Build
+          files: app/build/outputs/apk/debug/Notify.apk
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
