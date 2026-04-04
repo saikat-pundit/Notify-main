@@ -44,6 +44,13 @@ data class NotificationRecord(
 )
 
 class MainActivity : AppCompatActivity() {
+    private lateinit var notificationContainer: LinearLayout
+    private lateinit var controllerContainer: LinearLayout
+    private lateinit var bottomNav: BottomNavigationView
+    private lateinit var spinnerControllerDevice: Spinner
+    private lateinit var spinnerCommand: Spinner
+    private lateinit var etMessage: EditText
+    private lateinit var btnActivate: Button
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var navView: NavigationView
     private lateinit var listView: ListView
