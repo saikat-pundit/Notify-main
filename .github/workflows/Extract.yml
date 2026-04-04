@@ -1,9 +1,7 @@
 name: Extract Notify ZIP
 
 on:
-  push:
-    paths:
-      - 'Notify-main.zip' # Triggers when this specific zip is pushed
+  workflow_dispatch:  # Manual trigger
 
 jobs:
   unzip-and-commit:
