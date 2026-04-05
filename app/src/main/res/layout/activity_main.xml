@@ -114,9 +114,9 @@
                     android:id="@+id/gistListView"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:layout_below="@id/searchContainer"
-                    android:divider="@android:color/transparent"
-                    android:dividerHeight="8dp"
+                    android:layout_below="@id/searchContainer"                    
+                    android:divider="#4DFFFFFF" 
+                    android:dividerHeight="1dp"                     
                     android:padding="8dp"
                     android:clipToPadding="false"/>
 
