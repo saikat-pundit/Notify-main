@@ -191,11 +191,11 @@ class UsageChartManager(
         
         // Adjust height dynamically based on active hours so bars aren't too stretched
         val params = timelineBarChart.layoutParams
-        params.height = (activeHours.size * 100) + 100 // 100 pixels per row + padding
+        params.height = (activeHours.size * 80) + 100 // 100 pixels per row + padding
         timelineBarChart.layoutParams = params
 
         val timelineData = BarData(timelineDataSet)
-        timelineData.barWidth = 0.4f
+        timelineData.barWidth = 0.95f
         timelineBarChart.data = timelineData
         timelineBarChart.invalidate()
     }
