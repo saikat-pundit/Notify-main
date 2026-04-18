@@ -271,6 +271,7 @@ class MainActivity : AppCompatActivity() {
             autoRefreshHandler.removeCallbacks(autoRefreshRunnable)
             autoRefreshHandler.postDelayed(autoRefreshRunnable, 60000)
             fetchGistData()
+            fetchUsageData()
         }
 
         navView.setNavigationItemSelectedListener { menuItem ->
@@ -409,7 +410,7 @@ class MainActivity : AppCompatActivity() {
                 val rawBody = response.body?.string() ?: ""
                 
                 var finalData = EncryptionHelper.decrypt(rawBody)
-                if (finalData.isEmpty() && rawBody.contains(",")) {
+                if (finalData.isEmpty() && rawBody.isNotBlank()) {
                     finalData = rawBody
                 }
 
