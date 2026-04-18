@@ -93,6 +93,7 @@ class MainActivity : AppCompatActivity() {
     private val autoRefreshRunnable = object : Runnable {
         override fun run() {
             fetchGistData()
+            fetchUsageData()
             autoRefreshHandler.postDelayed(this, 60000)
         }
     }
@@ -295,6 +296,7 @@ class MainActivity : AppCompatActivity() {
         // 4. INITIALIZE DATA & WORKER
         // ==========================================
         fetchGistData()
+        fetchUsageData()
         setupBackgroundWorker()
     }
 
