@@ -188,7 +188,7 @@
                         <com.github.mikephil.charting.charts.HorizontalBarChart
                             android:id="@+id/appUsageBarChart"
                             android:layout_width="match_parent"
-                            android:layout_height="350dp"
+                            android:layout_height="500dp"
                             android:layout_marginBottom="32dp"/>
 
                         <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="App Usage Time Line" android:textColor="#64FFDA" android:textSize="18sp" android:textStyle="bold" android:layout_marginBottom="8dp"/>
