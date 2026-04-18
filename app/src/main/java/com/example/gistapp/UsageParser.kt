@@ -18,17 +18,18 @@ object UsageParser {
         val records = mutableListOf<UsageRecord>()
         val lines = data.lines().filter { it.isNotBlank() }
         
-        // Prepare for both 2-digit and 4-digit years
+        // Added the ISO format (yyyy-MM-dd) seen in your screenshot!
+        val formatIso = SimpleDateFormat("yyyy-MM-dd hh:mm:ss a", Locale.US)
         val format2Digit = SimpleDateFormat("dd MMM yy hh:mm:ss a", Locale.US)
         val format4Digit = SimpleDateFormat("dd MMM yyyy hh:mm:ss a", Locale.US)
 
         for (line in lines) {
-            // 1. Bulletproof Splitting: Try Tab, then Comma, then Multiple Spaces
+            // 1. Bulletproof Splitting
             var parts = line.split("\t").map { it.trim().replace("\"", "") }
             if (parts.size < 5) parts = line.split(",").map { it.trim().replace("\"", "") }
             if (parts.size < 5) parts = line.split("\\s{2,}".toRegex()).map { it.trim().replace("\"", "") }
             
-            // 2. Safely check for at least 5 columns, and ignore the Header row 
+            // 2. Safely check for at least 5 columns
             if (parts.size >= 5 && !parts[0].contains("Device", ignoreCase = true)) {
                 val device = parts[0]
                 val app = getFriendlyAppName(parts[1])
@@ -42,16 +43,14 @@ object UsageParser {
                 var startDate: Date? = null
                 var endDate: Date? = null
                 
-                // 3. Safe Date Parsing: Use inline try/catch so a malformed date doesn't crash the whole loop
-                try { startDate = format2Digit.parse(startStr) } catch (e: Exception) {}
-                if (startDate == null) {
-                    try { startDate = format4Digit.parse(startStr) } catch (e: Exception) {}
-                }
+                // 3. Safe Date Parsing: Try the new format first, fallback to the old ones
+                try { startDate = formatIso.parse(startStr) } catch (e: Exception) {}
+                if (startDate == null) try { startDate = format2Digit.parse(startStr) } catch (e: Exception) {}
+                if (startDate == null) try { startDate = format4Digit.parse(startStr) } catch (e: Exception) {}
                 
-                try { endDate = format2Digit.parse(endStr) } catch (e: Exception) {}
-                if (endDate == null) {
-                    try { endDate = format4Digit.parse(endStr) } catch (e: Exception) {}
-                }
+                try { endDate = formatIso.parse(endStr) } catch (e: Exception) {}
+                if (endDate == null) try { endDate = format2Digit.parse(endStr) } catch (e: Exception) {}
+                if (endDate == null) try { endDate = format4Digit.parse(endStr) } catch (e: Exception) {}
                 
                 val duration = if (startDate != null && endDate != null) {
                     (endDate.time - startDate.time) / 1000 // Convert milliseconds to seconds
