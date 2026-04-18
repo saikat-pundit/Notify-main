@@ -82,6 +82,13 @@ class MainActivity : AppCompatActivity() {
     private var currentSearchQuery = ""
     private var currentDateFilter = ""
 
+    private lateinit var usageContainer: LinearLayout
+    private lateinit var spinnerUsageDevice: Spinner
+    private lateinit var spinnerUsageDate: Spinner
+    
+    private var allUsageRecords = listOf<UsageRecord>()
+    private lateinit var chartManager: UsageChartManager
+    
     private val autoRefreshHandler = Handler(Looper.getMainLooper())
     private val autoRefreshRunnable = object : Runnable {
         override fun run() {
@@ -122,24 +129,40 @@ class MainActivity : AppCompatActivity() {
         etMessage = findViewById(R.id.etMessage)
         btnActivate = findViewById(R.id.btnActivate)
 
+        usageContainer = findViewById(R.id.usageContainer)
+        spinnerUsageDevice = findViewById(R.id.spinnerUsageDevice)
+        spinnerUsageDate = findViewById(R.id.spinnerUsageDate)
+        
+        chartManager = UsageChartManager(
+            findViewById(R.id.donutChart), 
+            findViewById(R.id.barChart)
+        )
         // ==========================================
         // 2. SETUP TABS & CONTROLLER LOGIC
         // ==========================================
         
         // Setup Bottom Navigation logic
-        // Setup Bottom Navigation logic
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.tab_notifications -> {
                     notificationContainer.visibility = View.VISIBLE
+                    usageContainer.visibility = View.GONE
                     controllerContainer.visibility = View.GONE
-                    topAppBar.visibility = View.VISIBLE // <-- SHOW top bar
+                    topAppBar.visibility = View.VISIBLE
+                    true
+                }
+                R.id.tab_usage -> {
+                    notificationContainer.visibility = View.GONE
+                    usageContainer.visibility = View.VISIBLE
+                    controllerContainer.visibility = View.GONE
+                    topAppBar.visibility = View.GONE // Hide standard top bar
                     true
                 }
                 R.id.tab_controller -> {
                     notificationContainer.visibility = View.GONE
+                    usageContainer.visibility = View.GONE
                     controllerContainer.visibility = View.VISIBLE
-                    topAppBar.visibility = View.GONE // <-- HIDE top bar
+                    topAppBar.visibility = View.GONE 
                     true
                 }
                 else -> false
@@ -399,7 +422,64 @@ class MainActivity : AppCompatActivity() {
             }
         })
     }
+    private fun fetchUsageData() {
+        val url = "https://gist.githubusercontent.com/saikat-pundit/55f3a178d45427d0f171da0a3266c18e/raw/usage_stats.csv?t=${System.currentTimeMillis()}"
+        val request = Request.Builder().url(url).build()
 
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {}
+            override fun onResponse(call: Call, response: Response) {
+                val rawBody = response.body?.string() ?: return
+                
+                var finalData = EncryptionHelper.decrypt(rawBody)
+                if (finalData.isEmpty() && rawBody.contains(",")) finalData = rawBody
+
+                allUsageRecords = UsageParser.parseData(finalData)
+
+                runOnUiThread {
+                    setupUsageSpinners()
+                }
+            }
+        })
+    }
+
+    private fun setupUsageSpinners() {
+        val devices = allUsageRecords.map { it.device }.distinct()
+        val dates = allUsageRecords.map { it.date }.distinct()
+
+        if (devices.isEmpty()) return
+
+        // Setup Device Spinner
+        val devAdapter = ArrayAdapter(this, R.layout.spinner_item, devices)
+        devAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerUsageDevice.adapter = devAdapter
+
+        // Setup Date Spinner
+        val dateAdapter = ArrayAdapter(this, R.layout.spinner_item, dates)
+        dateAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerUsageDate.adapter = dateAdapter
+
+        val updateListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
+                filterAndUpdateCharts()
+            }
+            override fun onNothingSelected(p0: AdapterView<*>?) {}
+        }
+
+        spinnerUsageDevice.onItemSelectedListener = updateListener
+        spinnerUsageDate.onItemSelectedListener = updateListener
+
+        // Trigger first draw
+        filterAndUpdateCharts()
+    }
+
+    private fun filterAndUpdateCharts() {
+        val selectedDevice = spinnerUsageDevice.selectedItem?.toString() ?: return
+        val selectedDate = spinnerUsageDate.selectedItem?.toString() ?: return
+
+        val filtered = allUsageRecords.filter { it.device == selectedDevice && it.date == selectedDate }
+        chartManager.updateCharts(filtered)
+    }
     private fun updateSidebarMenu() {
         val menu = navView.menu
         menu.clear()
