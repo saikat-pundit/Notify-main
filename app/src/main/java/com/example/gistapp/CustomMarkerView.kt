@@ -8,10 +8,13 @@ import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.PieEntry
 import com.github.mikephil.charting.highlight.Highlight
 import com.github.mikephil.charting.utils.MPPointF
+import android.os.Handler
+import android.os.Looper
 
 class CustomMarkerView(context: Context, layoutResource: Int) : MarkerView(context, layoutResource) {
     private val tvContent: TextView = findViewById(R.id.tvContent)
-
+    private val hideHandler = Handler(Looper.getMainLooper())
+    private val hideRunnable = Runnable { chartView?.highlightValue(null) }
     override fun refreshContent(e: Entry?, highlight: Highlight?) {
         if (e == null) return
 
