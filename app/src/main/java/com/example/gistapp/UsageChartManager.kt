@@ -43,7 +43,7 @@ class UsageChartManager(
         donutChart.setTransparentCircleAlpha(0)
         donutChart.holeRadius = 55f
         donutChart.setDrawEntryLabels(false)
-
+        donutChart.setExtraOffsets(0f, 0f, 0f, 0f)
         donutChart.setCenterTextColor(Color.WHITE)
         donutChart.setCenterTextSize(20f) // Bigger center text
         donutChart.setCenterTextTypeface(Typeface.DEFAULT_BOLD)
@@ -126,11 +126,13 @@ class UsageChartManager(
         // 2. UPDATE APP SPECIFIC BAR CHART (Restored)
         val appBarEntries = ArrayList<BarEntry>()
         val appNames = ArrayList<String>()
-        
-        sortedTotals.reversed().forEachIndexed { index, entry ->
-            // Pass app name as 'data' for the Tooltip
-            appBarEntries.add(BarEntry(index.toFloat(), entry.value / 60f, entry.key))
-            appNames.add(entry.key)
+        val filteredTotals = sortedTotals.filter { it.value >= 60L }.reversed()
+
+        filteredTotals.forEachIndexed { index, entry ->
+            val originalName = entry.key
+            val trimmedName = if (originalName.length > 12) originalName.take(10) + ".." else originalName
+            appBarEntries.add(BarEntry(index.toFloat(), entry.value / 60f, originalName))
+            appNames.add(trimmedName)
         }
 
         val appBarDataSet = BarDataSet(appBarEntries, "")
@@ -149,7 +151,11 @@ class UsageChartManager(
         appUsageBarChart.xAxis.valueFormatter = IndexAxisValueFormatter(appNames)
         appUsageBarChart.xAxis.labelCount = appNames.size
         val appUsageData = BarData(appBarDataSet)
-        appUsageData.barWidth = 0.95f
+        appUsageData.barWidth = 0.75f
+        val appParams = appUsageBarChart.layoutParams
+        appParams.height = (appNames.size * 80) + 100
+        appUsageBarChart.layoutParams = appParams
+        
         appUsageBarChart.data = appUsageData
         appUsageBarChart.invalidate()
 
