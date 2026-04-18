@@ -148,13 +148,13 @@
                     android:paddingHorizontal="16dp"
                     android:elevation="4dp">
                     
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Device:" android:textColor="#FFFFFF" android:textStyle="bold" android:layout_marginEnd="8dp"/>
-                    <Spinner android:id="@+id/spinnerUsageDevice" android:layout_width="100dp" android:layout_height="40dp" android:backgroundTint="#64FFDA"/>
+                   <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Device:" android:textColor="#FFFFFF" android:textStyle="bold" android:layout_marginEnd="8dp"/>
+                    <Spinner android:id="@+id/spinnerUsageDevice" android:layout_width="120dp" android:layout_height="40dp" android:background="@drawable/bg_spinner"/>
                     
                     <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1"/>
                     
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Date:" android:textColor="#FFFFFF" android:textStyle="bold" android:layout_marginEnd="8dp"/>
-                    <Spinner android:id="@+id/spinnerUsageDate" android:layout_width="110dp" android:layout_height="40dp" android:backgroundTint="#64FFDA"/>
+                    <Spinner android:id="@+id/spinnerUsageDate" android:layout_width="120dp" android:layout_height="40dp" android:background="@drawable/bg_spinner"/>
                 </LinearLayout>
 
                 <ScrollView
@@ -256,8 +256,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="#1E1E1E"
-            app:itemIconTint="#64FFDA"
-            app:itemTextColor="#64FFDA"
+            app:itemIconTint="@color/bottom_nav_color" 
+            app:itemTextColor="@color/bottom_nav_color"
             app:menu="@menu/bottom_nav_menu" />
 
     </LinearLayout>
