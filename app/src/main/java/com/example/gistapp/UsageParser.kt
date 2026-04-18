@@ -1,6 +1,7 @@
 package com.example.gistapp
 
 import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 data class UsageRecord(
@@ -15,58 +16,57 @@ data class UsageRecord(
 object UsageParser {
     fun parseData(data: String): List<UsageRecord> {
         val records = mutableListOf<UsageRecord>()
-        
-        // Ensure we only process lines with actual content
         val lines = data.lines().filter { it.isNotBlank() }
         
-        // Prepare for both 2-digit and 4-digit years just in case
+        // Prepare for both 2-digit and 4-digit years
         val format2Digit = SimpleDateFormat("dd MMM yy hh:mm:ss a", Locale.US)
         val format4Digit = SimpleDateFormat("dd MMM yyyy hh:mm:ss a", Locale.US)
 
         for (line in lines) {
-            // Smart Split: Handles proper CSV commas, but falls back to tabs if the file is Tab-Separated
-            val parts = if (line.contains(",")) {
-                line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)".toRegex()).map { it.replace("\"", "").trim() }
-            } else {
-                line.split("\\s{2,}|\t".toRegex()).map { it.trim() }
-            }
+            // 1. Bulletproof Splitting: Try Tab, then Comma, then Multiple Spaces
+            var parts = line.split("\t").map { it.trim().replace("\"", "") }
+            if (parts.size < 5) parts = line.split(",").map { it.trim().replace("\"", "") }
+            if (parts.size < 5) parts = line.split("\\s{2,}".toRegex()).map { it.trim().replace("\"", "") }
             
-            // Ensure we have at least 5 columns and skip the Header row
-            if (parts.size >= 5 && !parts[0].equals("Device name", ignoreCase = true) && !parts[0].equals("Device", ignoreCase = true)) {
-                try {
-                    val device = parts[0]
-                    val app = getFriendlyAppName(parts[1])
-                    val date = parts[2]
-                    val startTime = parts[3]
-                    val endTime = parts[4]
+            // 2. Safely check for at least 5 columns, and ignore the Header row 
+            if (parts.size >= 5 && !parts[0].contains("Device", ignoreCase = true)) {
+                val device = parts[0]
+                val app = getFriendlyAppName(parts[1])
+                val date = parts[2]
+                val startTime = parts[3]
+                val endTime = parts[4]
 
-                    val startStr = "$date $startTime"
-                    val endStr = "$date $endTime"
-                    
-                    var startDate = format2Digit.parse(startStr)
-                    var endDate = format2Digit.parse(endStr)
-                    
-                    // Fallback to 4-digit year format if parsing failed
-                    if (startDate == null) startDate = format4Digit.parse(startStr)
-                    if (endDate == null) endDate = format4Digit.parse(endStr)
-                    
-                    val duration = if (startDate != null && endDate != null) {
-                        (endDate.time - startDate.time) / 1000 // Convert milliseconds to seconds
-                    } else 0L
-
-                    records.add(
-                        UsageRecord(
-                            device = device,
-                            app = app,
-                            date = date,
-                            startTime = startTime,
-                            endTime = endTime,
-                            durationSeconds = maxOf(0L, duration) // Ensure we never log negative time
-                        )
-                    )
-                } catch (e: Exception) {
-                    e.printStackTrace()
+                val startStr = "$date $startTime"
+                val endStr = "$date $endTime"
+                
+                var startDate: Date? = null
+                var endDate: Date? = null
+                
+                // 3. Safe Date Parsing: Use inline try/catch so a malformed date doesn't crash the whole loop
+                try { startDate = format2Digit.parse(startStr) } catch (e: Exception) {}
+                if (startDate == null) {
+                    try { startDate = format4Digit.parse(startStr) } catch (e: Exception) {}
                 }
+                
+                try { endDate = format2Digit.parse(endStr) } catch (e: Exception) {}
+                if (endDate == null) {
+                    try { endDate = format4Digit.parse(endStr) } catch (e: Exception) {}
+                }
+                
+                val duration = if (startDate != null && endDate != null) {
+                    (endDate.time - startDate.time) / 1000 // Convert milliseconds to seconds
+                } else 0L
+
+                records.add(
+                    UsageRecord(
+                        device = device,
+                        app = app,
+                        date = date,
+                        startTime = startTime,
+                        endTime = endTime,
+                        durationSeconds = maxOf(0L, duration) // Ensure we never log negative time
+                    )
+                )
             }
         }
         return records
@@ -84,6 +84,9 @@ object UsageParser {
             "com.google.android.apps.messaging" -> "SMS"
             "com.google.android.dialer" -> "Phone"
             "com.android.systemui" -> "System UI"
+            "com.instagram.android" -> "Instagram"
+            "com.facebook.katana" -> "Facebook"
+            "com.facebook.orca" -> "Messenger"
             else -> {
                 val parts = packageName.split(".")
                 if (parts.isNotEmpty()) parts.last().replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() } else packageName
