@@ -148,7 +148,9 @@ class UsageChartManager(
 
         appUsageBarChart.xAxis.valueFormatter = IndexAxisValueFormatter(appNames)
         appUsageBarChart.xAxis.labelCount = appNames.size
-        appUsageBarChart.data = BarData(appBarDataSet)
+        val appUsageData = BarData(appBarDataSet)
+        appUsageData.barWidth = 0.95f
+        appUsageBarChart.data = appUsageData
         appUsageBarChart.invalidate()
 
 
@@ -192,7 +194,9 @@ class UsageChartManager(
         params.height = (activeHours.size * 100) + 100 // 100 pixels per row + padding
         timelineBarChart.layoutParams = params
 
-        timelineBarChart.data = BarData(timelineDataSet)
+        val timelineData = BarData(timelineDataSet)
+        timelineData.barWidth = 0.4f
+        timelineBarChart.data = timelineData
         timelineBarChart.invalidate()
     }
 }
