@@ -46,8 +46,9 @@ class CustomMarkerView(context: Context, layoutResource: Int) : MarkerView(conte
         val hrs = durationSecs / 3600
         val mins = (durationSecs % 3600) / 60
         val timeStr = if (hrs > 0) "${hrs}h ${mins}m" else "${mins}m"
-
         tvContent.text = "$appName\n$timeStr"
+        hideHandler.removeCallbacks(hideRunnable)
+        hideHandler.postDelayed(hideRunnable, 3000)
         super.refreshContent(e, highlight)
     }
 
