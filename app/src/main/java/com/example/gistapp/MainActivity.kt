@@ -429,21 +429,35 @@ class MainActivity : AppCompatActivity() {
         })
     }
     private fun fetchUsageData() {
+        // Spin the Usage refresh icon
+        runOnUiThread {
+            if (btnUsageRefresh.animation == null) {
+                val rotate = RotateAnimation(0f, 360f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f)
+                rotate.duration = 1000
+                rotate.repeatCount = Animation.INFINITE
+                rotate.interpolator = LinearInterpolator()
+                btnUsageRefresh.startAnimation(rotate)
+            }
+        }
+
         val url = "https://gist.githubusercontent.com/saikat-pundit/55f3a178d45427d0f171da0a3266c18e/raw/usage_stats.csv?t=${System.currentTimeMillis()}"
         val request = Request.Builder().url(url).build()
 
         client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {}
+            override fun onFailure(call: Call, e: IOException) {
+                runOnUiThread { btnUsageRefresh.clearAnimation() }
+            }
             override fun onResponse(call: Call, response: Response) {
                 val rawBody = response.body?.string() ?: return
                 
                 var finalData = EncryptionHelper.decrypt(rawBody)
-                if (finalData.isEmpty() && rawBody.contains(",")) finalData = rawBody
+                if (finalData.isEmpty() && rawBody.isNotBlank()) finalData = rawBody
 
                 allUsageRecords = UsageParser.parseData(finalData)
 
                 runOnUiThread {
                     setupUsageSpinners()
+                    btnUsageRefresh.clearAnimation() // Stop spinning
                 }
             }
         })
