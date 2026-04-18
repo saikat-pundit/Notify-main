@@ -168,19 +168,39 @@
                         android:orientation="vertical"
                         android:padding="16dp">
 
-                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Cumulative Usage (Donut)" android:textColor="#64FFDA" android:textSize="16sp" android:textStyle="bold" android:layout_marginBottom="8dp"/>
+                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Total Usage" android:textColor="#64FFDA" android:textSize="18sp" android:textStyle="bold" android:layout_marginBottom="8dp"/>
+                        
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/cardDetailBox"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:cardBackgroundColor="#2C2C2C"
+                            app:cardCornerRadius="12dp"
+                            app:cardElevation="4dp"
+                            android:layout_marginBottom="8dp"
+                            android:visibility="gone">
+                            <TextView
+                                android:id="@+id/tvDetailBox"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:padding="16dp"
+                                android:textColor="#FFFFFF"
+                                android:textSize="16sp"
+                                android:textStyle="bold"
+                                android:gravity="center"/>
+                        </androidx.cardview.widget.CardView>
+
                         <com.github.mikephil.charting.charts.PieChart
                             android:id="@+id/donutChart"
                             android:layout_width="match_parent"
-                            android:layout_height="300dp"
-                            android:layout_marginBottom="32dp"/>
+                            android:layout_height="350dp"  android:layout_marginBottom="32dp"/>
 
-                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="App Timeline &amp; Totals" android:textColor="#64FFDA" android:textSize="16sp" android:textStyle="bold" android:layout_marginBottom="8dp"/>
+                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="App Usage Time Line" android:textColor="#64FFDA" android:textSize="18sp" android:textStyle="bold" android:layout_marginBottom="8dp"/>
+                        
                         <com.github.mikephil.charting.charts.HorizontalBarChart
                             android:id="@+id/barChart"
                             android:layout_width="match_parent"
-                            android:layout_height="400dp"
-                            android:layout_marginBottom="32dp"/>
+                            android:layout_height="800dp" android:layout_marginBottom="32dp"/>
                     </LinearLayout>
                 </ScrollView>
             </LinearLayout>
