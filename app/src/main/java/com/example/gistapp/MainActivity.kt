@@ -85,7 +85,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var usageContainer: LinearLayout
     private lateinit var spinnerUsageDevice: Spinner
     private lateinit var spinnerUsageDate: Spinner
-    
+    private lateinit var btnUsageRefresh: ImageButton
     private var allUsageRecords = listOf<UsageRecord>()
     private lateinit var chartManager: UsageChartManager
     
@@ -93,7 +93,6 @@ class MainActivity : AppCompatActivity() {
     private val autoRefreshRunnable = object : Runnable {
         override fun run() {
             fetchGistData()
-            fetchUsageData()
             autoRefreshHandler.postDelayed(this, 60000)
         }
     }
@@ -133,12 +132,12 @@ class MainActivity : AppCompatActivity() {
         usageContainer = findViewById(R.id.usageContainer)
         spinnerUsageDevice = findViewById(R.id.spinnerUsageDevice)
         spinnerUsageDate = findViewById(R.id.spinnerUsageDate)
-        
+        btnUsageRefresh = findViewById(R.id.btnUsageRefresh)
         chartManager = UsageChartManager(
+            this,
             findViewById(R.id.donutChart), 
-            findViewById(R.id.barChart),
-            findViewById(R.id.cardDetailBox),
-            findViewById(R.id.tvDetailBox)
+            findViewById(R.id.appUsageBarChart),
+            findViewById(R.id.timelineBarChart)
         )
         // ==========================================
         // 2. SETUP TABS & CONTROLLER LOGIC
@@ -275,7 +274,9 @@ class MainActivity : AppCompatActivity() {
             fetchGistData()
             fetchUsageData()
         }
-
+        btnUsageRefresh.setOnClickListener {
+            fetchUsageData()
+        }
         navView.setNavigationItemSelectedListener { menuItem ->
             currentCategory = menuItem.title.toString()
             tvHeaderTitle.text = currentCategory
