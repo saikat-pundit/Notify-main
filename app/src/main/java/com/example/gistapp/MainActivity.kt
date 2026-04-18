@@ -136,7 +136,9 @@ class MainActivity : AppCompatActivity() {
         
         chartManager = UsageChartManager(
             findViewById(R.id.donutChart), 
-            findViewById(R.id.barChart)
+            findViewById(R.id.barChart),
+            findViewById(R.id.cardDetailBox),
+            findViewById(R.id.tvDetailBox)
         )
         // ==========================================
         // 2. SETUP TABS & CONTROLLER LOGIC
