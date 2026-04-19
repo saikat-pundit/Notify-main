@@ -240,28 +240,35 @@ timelineDataSet.valueFormatter = object : ValueFormatter() {
         timelineBarChart.data = timelineData
         timelineBarChart.invalidate()
         // 4. UPDATE BUBBLE CHART (Constellation)
-        val bubbleEntries = ArrayList<BubbleEntry>()
-        val groupedByApp = records.groupBy { it.app }
-        
-        var colorIndex = 0
-        val bubbleDataSets = ArrayList<com.github.mikephil.charting.interfaces.datasets.IBubbleDataSet>()
+        // 4. UPDATE BUBBLE CHART (Constellation) - Top 5 Apps Only
+val bubbleEntries = ArrayList<BubbleEntry>()
+val groupedByApp = records.groupBy { it.app }
+val appTotalDuration = records.groupBy { it.app }.mapValues { it.value.sumOf { session -> session.durationSeconds } }
 
-        groupedByApp.forEach { (appName, appRecords) ->
-            val frequency = appRecords.size.toFloat() // X: How many times opened
-            val totalSecsSpent = appRecords.sumOf { it.durationSeconds }
-            val avgDuration = (totalSecsSpent / frequency) / 60f // Y: Avg minutes per session
-            val bubbleSize = totalSecsSpent.toFloat() // Size: Total time
+// Get top 5 apps by total duration
+val top5Apps = appTotalDuration.entries.sortedByDescending { it.value }.take(5).map { it.key }.toSet()
 
-            val entry = BubbleEntry(frequency, avgDuration, bubbleSize, appName)
-            val dataSet = BubbleDataSet(listOf(entry), appName)
-            dataSet.color = colors[colorIndex % colors.size]
-            dataSet.valueTextColor = Color.TRANSPARENT // Hide ugly numbers on bubbles
-            bubbleDataSets.add(dataSet)
-            colorIndex++
-        }
-        
-        bubbleChartConstellation.data = BubbleData(bubbleDataSets)
-        bubbleChartConstellation.invalidate()
+var colorIndex = 0
+val bubbleDataSets = ArrayList<IBubbleDataSet>()
+
+groupedByApp.filter { it.key in top5Apps }.forEach { (appName, appRecords) ->
+    val frequency = appRecords.size.toFloat()
+    val totalSecsSpent = appRecords.sumOf { it.durationSeconds }
+    val avgDuration = if (frequency > 0) (totalSecsSpent / frequency) / 60f else 0f
+    val bubbleSize = totalSecsSpent.toFloat() / 60f // Size based on total minutes
+    
+    val entry = BubbleEntry(frequency, avgDuration, bubbleSize, appName)
+    val dataSet = BubbleDataSet(listOf(entry), appName)
+    dataSet.color = colors[colorIndex % colors.size]
+    dataSet.valueTextColor = Color.TRANSPARENT
+    dataSet.setDrawValues(false)
+    bubbleDataSets.add(dataSet)
+    colorIndex++
+}
+
+bubbleChartConstellation.data = BubbleData(bubbleDataSets)
+bubbleChartConstellation.marker = CustomMarkerView(context, R.layout.custom_marker_view)
+bubbleChartConstellation.invalidate()
     }
     fun updateFlowChart(records: List<UsageRecord>, startHour: Int, endHour: Int) {
         // Filter chronologically
@@ -314,5 +321,6 @@ timelineDataSet.valueFormatter = object : ValueFormatter() {
         flowBarChart.xAxis.valueFormatter = IndexAxisValueFormatter(listOf("Flow"))
         flowBarChart.xAxis.labelCount = 1
         flowBarChart.invalidate()
+        flowBarChart.marker = CustomMarkerView(context, R.layout.custom_marker_view)
     }
 }
