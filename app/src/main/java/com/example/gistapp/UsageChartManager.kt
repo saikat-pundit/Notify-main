@@ -46,6 +46,11 @@ class UsageChartManager(
         bubbleChartConstellation.axisLeft.textColor = Color.WHITE
         bubbleChartConstellation.axisRight.isEnabled = false
         bubbleChartConstellation.legend.textColor = Color.WHITE
+        bubbleChartConstellation.setPinchZoom(true)
+        bubbleChartConstellation.xAxis.spaceMin = 1.5f
+        bubbleChartConstellation.xAxis.spaceMax = 1.5f
+        bubbleChartConstellation.axisLeft.spaceBottom = 20f
+        bubbleChartConstellation.axisLeft.spaceTop = 20f
     }
 
     private fun setupFlowChart() {
@@ -250,5 +255,57 @@ class UsageChartManager(
         
         bubbleChartConstellation.data = BubbleData(bubbleDataSets)
         bubbleChartConstellation.invalidate()
+    }
+    fun updateFlowChart(records: List<UsageRecord>, startHour: Int, endHour: Int) {
+        // Filter chronologically
+        val flowRecords = records.filter { it.startHour in startHour..endHour }.sortedBy { it.startTimeMs }
+        if (flowRecords.isEmpty()) {
+            flowBarChart.clear()
+            return
+        }
+
+        val flowValues = ArrayList<Float>()
+        val flowColors = ArrayList<Int>()
+        val flowLabels = ArrayList<String>()
+
+        var lastEndTimeMs = -1L
+
+        // Map apps to their dedicated colors so it matches the Donut Chart
+        val uniqueApps = records.map { it.app }.distinct()
+        val colorMap = uniqueApps.mapIndexed { index, app -> app to colors[index % colors.size] }.toMap()
+
+        for (record in flowRecords) {
+            // If there is a gap between apps, insert a transparent "Screen Off" block!
+            if (lastEndTimeMs != -1L && record.startTimeMs > lastEndTimeMs) {
+                val gapSecs = (record.startTimeMs - lastEndTimeMs) / 1000f
+                if (gapSecs > 0) {
+                    flowValues.add(gapSecs / 60f) // Convert to Minutes
+                    flowColors.add(Color.TRANSPARENT)
+                    flowLabels.add("Screen Off")
+                }
+            }
+            
+            // Add the actual App Usage block
+            flowValues.add(record.durationSeconds / 60f)
+            flowColors.add(colorMap[record.app] ?: Color.GRAY)
+            flowLabels.add(record.app)
+
+            lastEndTimeMs = record.startTimeMs + (record.durationSeconds * 1000L)
+        }
+
+        // We pass ALL segments into a single BarEntry so they stack side-by-side horizontally
+        val entry = BarEntry(0f, flowValues.toFloatArray(), flowLabels)
+        
+        val dataSet = BarDataSet(listOf(entry), "")
+        dataSet.colors = flowColors
+        dataSet.setDrawValues(false)
+
+        val barData = BarData(dataSet)
+        barData.barWidth = 0.5f // Thickness of the waterfall bar
+
+        flowBarChart.data = barData
+        flowBarChart.xAxis.valueFormatter = IndexAxisValueFormatter(listOf("Flow"))
+        flowBarChart.xAxis.labelCount = 1
+        flowBarChart.invalidate()
     }
 }
