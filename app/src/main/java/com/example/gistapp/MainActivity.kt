@@ -88,7 +88,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnUsageRefresh: ImageButton
     private var allUsageRecords = listOf<UsageRecord>()
     private lateinit var chartManager: UsageChartManager
-    
+    private lateinit var bubbleChartConstellation: com.github.mikephil.charting.charts.BubbleChart
+    private lateinit var flowBarChart: com.github.mikephil.charting.charts.HorizontalBarChart
+    private lateinit var spinnerFlowFrom: Spinner
+    private lateinit var spinnerFlowTo: Spinner
     private val autoRefreshHandler = Handler(Looper.getMainLooper())
     private val autoRefreshRunnable = object : Runnable {
         override fun run() {
@@ -138,6 +141,19 @@ class MainActivity : AppCompatActivity() {
             findViewById(R.id.donutChart), 
             findViewById(R.id.appUsageBarChart),
             findViewById(R.id.timelineBarChart)
+        )
+        bubbleChartConstellation = findViewById(R.id.bubbleChartConstellation)
+        flowBarChart = findViewById(R.id.flowBarChart)
+        spinnerFlowFrom = findViewById(R.id.spinnerFlowFrom)
+        spinnerFlowTo = findViewById(R.id.spinnerFlowTo)
+
+        chartManager = UsageChartManager(
+            this,
+            findViewById(R.id.donutChart), 
+            findViewById(R.id.appUsageBarChart),
+            findViewById(R.id.timelineBarChart),
+            bubbleChartConstellation,
+            flowBarChart
         )
         // ==========================================
         // 2. SETUP TABS & CONTROLLER LOGIC
@@ -499,6 +515,16 @@ class MainActivity : AppCompatActivity() {
 
         val filtered = allUsageRecords.filter { it.device == selectedDevice && it.date == selectedDate }
         chartManager.updateCharts(filtered)
+        
+        // Populate Flow Spinners with available start hours for this specific date
+        val hours = filtered.map { "${it.startHour}:00" }.distinct().sorted()
+        if(hours.isNotEmpty() && spinnerFlowFrom.adapter == null) {
+            val hourAdapter = ArrayAdapter(this, R.layout.spinner_item, hours)
+            hourAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            spinnerFlowFrom.adapter = hourAdapter
+            spinnerFlowTo.adapter = hourAdapter
+            spinnerFlowTo.setSelection(hours.size - 1) // Default "To" is the last hour
+        }
     }
     private fun updateSidebarMenu() {
         val menu = navView.menu
