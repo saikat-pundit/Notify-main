@@ -9,7 +9,10 @@ import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.*
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.github.mikephil.charting.formatter.ValueFormatter
-
+import com.github.mikephil.charting.interfaces.datasets.IBubbleDataSet
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 class UsageChartManager(
     private val context: Context,
     private val donutChart: PieChart, 
@@ -266,7 +269,7 @@ groupedByApp.filter { it.key in top5Apps }.forEach { (appName, appRecords) ->
     colorIndex++
 }
 
-bubbleChartConstellation.data = BubbleData(bubbleDataSets)
+bubbleChartConstellation.data = BubbleData(bubbleDataSets as List<IBubbleDataSet>)
 bubbleChartConstellation.marker = CustomMarkerView(context, R.layout.custom_marker_view)
 bubbleChartConstellation.invalidate()
     }
