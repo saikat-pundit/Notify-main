@@ -31,18 +31,18 @@ class CustomMarkerView(context: Context, layoutResource: Int) : MarkerView(conte
                 durationSecs = e.value.toLong()
             }
             is BarEntry -> {
-                if (e.yVals != null && highlight != null) {
-                    // Stacked Bar (24-Hour Timeline)
-                    val stackIndex = highlight.stackIndex
-                    val appsList = e.data as? List<*>
-                    appName = appsList?.getOrNull(stackIndex)?.toString() ?: ""
-                    durationSecs = (e.yVals[stackIndex] * 60).toLong() // Mins back to Secs
-                } else {
-                    // Single Bar (App Specific Usage)
-                    appName = e.data?.toString() ?: ""
-                    durationSecs = (e.y * 60).toLong() // Mins back to Secs
-                }
-            }
+    if (e.yVals != null && highlight != null) {
+        // Stacked Bar (24-Hour Timeline or Flow Chart)
+        val stackIndex = highlight.stackIndex
+        val appsList = e.data as? List<*>
+        appName = appsList?.getOrNull(stackIndex)?.toString() ?: ""
+        durationSecs = (e.yVals[stackIndex] * 60).toLong()
+    } else {
+        // Single Bar (App Specific Usage)
+        appName = e.data?.toString() ?: ""
+        durationSecs = (e.y * 60).toLong()
+    }
+}
         }
 
         // Format beautifully
