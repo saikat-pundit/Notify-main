@@ -218,7 +218,14 @@ class UsageChartManager(
 
         val timelineDataSet = BarDataSet(timelineEntries, "")
         timelineDataSet.colors = dynamicColors 
-        timelineDataSet.setDrawValues(false) 
+        timelineDataSet.setDrawValues(true)
+timelineDataSet.valueTextColor = Color.WHITE
+timelineDataSet.valueTextSize = 10f
+timelineDataSet.valueFormatter = object : ValueFormatter() {
+    override fun getFormattedValue(value: Float): String {
+        return "${value.toInt()}m"
+    }
+} 
 
         timelineBarChart.xAxis.valueFormatter = IndexAxisValueFormatter(activeHourLabels)
         timelineBarChart.xAxis.labelCount = activeHours.size
