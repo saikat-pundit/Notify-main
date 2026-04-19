@@ -86,7 +86,7 @@ class UsageChartManager(
         appUsageBarChart.setDrawGridBackground(false)
         appUsageBarChart.setDrawValueAboveBar(true) // Show totals at end of bar
         appUsageBarChart.setScaleEnabled(false)
-
+        appUsageBarChart.setFitBars(true)
         appUsageBarChart.xAxis.position = XAxis.XAxisPosition.BOTTOM
         appUsageBarChart.xAxis.textColor = Color.WHITE
         appUsageBarChart.xAxis.setDrawGridLines(false)
@@ -179,7 +179,7 @@ class UsageChartManager(
         appUsageBarChart.xAxis.valueFormatter = IndexAxisValueFormatter(appNames)
         appUsageBarChart.xAxis.labelCount = appNames.size
         val appUsageData = BarData(appBarDataSet)
-        appUsageData.barWidth = 0.75f
+        appUsageData.barWidth = 0.5f
         val appParams = appUsageBarChart.layoutParams
         appParams.height = (appNames.size * 80) + 100
         appUsageBarChart.layoutParams = appParams
@@ -302,7 +302,9 @@ bubbleChartConstellation.invalidate()
             // Add the actual App Usage block
             flowValues.add(record.durationSeconds / 60f)
             flowColors.add(colorMap[record.app] ?: Color.GRAY)
-            flowLabels.add(record.app)
+            val startTimeFormatted = SimpleDateFormat("hh:mm a", Locale.US).format(Date(record.startTimeMs))
+val endTimeFormatted = SimpleDateFormat("hh:mm a", Locale.US).format(Date(record.startTimeMs + (record.durationSeconds * 1000)))
+flowLabels.add("${record.app}\n$startTimeFormatted - $endTimeFormatted")
 
             lastEndTimeMs = record.startTimeMs + (record.durationSeconds * 1000L)
         }
