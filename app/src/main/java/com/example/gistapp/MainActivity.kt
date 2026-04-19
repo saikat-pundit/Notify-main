@@ -507,10 +507,11 @@ class MainActivity : AppCompatActivity() {
     private fun filterAndUpdateCharts() {
         val selectedDevice = spinnerUsageDevice.selectedItem?.toString() ?: return
         val selectedDate = spinnerUsageDate.selectedItem?.toString() ?: return
+
         val filtered = allUsageRecords.filter { it.device == selectedDevice && it.date == selectedDate }
         chartManager.updateCharts(filtered)
         
-        // 1. Populate Flow Spinners with AM/PM format
+        // 1. Populate Flow Spinners with available start hours for this specific date
         flowAvailableHours = filtered.map { it.startHour }.distinct().sorted()
         
         if (flowAvailableHours.isNotEmpty()) {
@@ -527,23 +528,28 @@ class MainActivity : AppCompatActivity() {
             val hourAdapter = ArrayAdapter(this, R.layout.spinner_item, hourLabels)
             hourAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             
-            val prevFromPos = maxOf(0, spinnerFlowFrom.selectedItemPosition)
-            val prevToPos = maxOf(0, spinnerFlowTo.selectedItemPosition)
+            val currentFrom = spinnerFlowFrom.selectedItemPosition
+            val currentTo = spinnerFlowTo.selectedItemPosition
 
             spinnerFlowFrom.adapter = hourAdapter
             spinnerFlowTo.adapter = hourAdapter
 
-            // Keep selections if valid, else default to first/last
-            if (spinnerFlowFrom.adapter.count > prevFromPos) spinnerFlowFrom.setSelection(prevFromPos)
-            if (spinnerFlowTo.adapter.count > prevToPos) spinnerFlowTo.setSelection(prevToPos)
-            else spinnerFlowTo.setSelection(hourLabels.size - 1)
+            // THE FIX: Calculate SAFE indices that are guaranteed to exist in the new array
+            val safeFromIdx = if (currentFrom in hourLabels.indices) currentFrom else 0
+            val safeToIdx = if (currentTo in hourLabels.indices) currentTo else hourLabels.size - 1
 
-            // 2. Set Listeners to update the Waterfall Chart when changed
+            // Apply safe selections silently (false prevents it from triggering listeners prematurely)
+            spinnerFlowFrom.setSelection(safeFromIdx, false)
+            spinnerFlowTo.setSelection(safeToIdx, false)
+
+            // 2. Set Listeners to update the Waterfall Chart when changed manually by user
             val flowUpdateListener = object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
                     val fromIdx = spinnerFlowFrom.selectedItemPosition
                     val toIdx = spinnerFlowTo.selectedItemPosition
-                    if (fromIdx >= 0 && toIdx >= 0) {
+                    
+                    // THE FIX: Bulletproof bounds-checking before updating the chart
+                    if (fromIdx in flowAvailableHours.indices && toIdx in flowAvailableHours.indices) {
                         val startH = flowAvailableHours[fromIdx]
                         val endH = flowAvailableHours[toIdx]
                         chartManager.updateFlowChart(filtered, minOf(startH, endH), maxOf(startH, endH))
@@ -555,10 +561,16 @@ class MainActivity : AppCompatActivity() {
             spinnerFlowFrom.onItemSelectedListener = flowUpdateListener
             spinnerFlowTo.onItemSelectedListener = flowUpdateListener
 
-            // 3. Trigger initial waterfall draw
-            val startH = flowAvailableHours[spinnerFlowFrom.selectedItemPosition]
-            val endH = flowAvailableHours[spinnerFlowTo.selectedItemPosition]
+            // 3. Trigger initial waterfall draw using our guaranteed SAFE indices
+            val startH = flowAvailableHours[safeFromIdx]
+            val endH = flowAvailableHours[safeToIdx]
             chartManager.updateFlowChart(filtered, minOf(startH, endH), maxOf(startH, endH))
+            
+        } else {
+            // THE FIX: Gracefully clear the flowchart and dropdowns if a device has 0 records
+            spinnerFlowFrom.adapter = null
+            spinnerFlowTo.adapter = null
+            chartManager.updateFlowChart(emptyList(), 0, 23)
         }
     }
     private fun updateSidebarMenu() {
