@@ -14,7 +14,9 @@ class UsageChartManager(
     private val context: Context,
     private val donutChart: PieChart, 
     private val appUsageBarChart: HorizontalBarChart,
-    private val timelineBarChart: HorizontalBarChart
+    private val timelineBarChart: HorizontalBarChart,
+    private val bubbleChartConstellation: com.github.mikephil.charting.charts.BubbleChart,
+    private val flowBarChart: HorizontalBarChart
 ) {
     private val colors = listOf(
         Color.parseColor("#64FFDA"), Color.parseColor("#FF8A65"), Color.parseColor("#BA68C8"),
@@ -33,8 +35,29 @@ class UsageChartManager(
         setupDonutChart()
         setupAppUsageBarChart()
         setupTimelineBarChart()
+        setupBubbleChart()
+        setupFlowChart()
+    }
+    private fun setupBubbleChart() {
+        bubbleChartConstellation.description.isEnabled = false
+        bubbleChartConstellation.setDrawGridBackground(false)
+        bubbleChartConstellation.xAxis.textColor = Color.WHITE
+        bubbleChartConstellation.xAxis.position = XAxis.XAxisPosition.BOTTOM
+        bubbleChartConstellation.axisLeft.textColor = Color.WHITE
+        bubbleChartConstellation.axisRight.isEnabled = false
+        bubbleChartConstellation.legend.textColor = Color.WHITE
     }
 
+    private fun setupFlowChart() {
+        flowBarChart.description.isEnabled = false
+        flowBarChart.setDrawGridBackground(false)
+        flowBarChart.setDrawValueAboveBar(false)
+        flowBarChart.xAxis.isEnabled = false
+        flowBarChart.axisLeft.textColor = Color.WHITE
+        flowBarChart.axisRight.isEnabled = false
+        flowBarChart.legend.isEnabled = false
+        flowBarChart.setScaleEnabled(true)
+    }
     private fun setupDonutChart() {
         donutChart.setUsePercentValues(true)
         donutChart.description.isEnabled = false
@@ -173,7 +196,7 @@ class UsageChartManager(
             val ampm = if (i < 12) "am" else "pm"
             "$hr$ampm"
         }.reversed()
-
+        
         // Build the stacked bars
         activeHours.reversed().forEachIndexed { index, hour ->
             val recordsInHour = records.filter { it.startHour == hour }
@@ -204,5 +227,28 @@ class UsageChartManager(
         timelineData.barWidth = 0.95f
         timelineBarChart.data = timelineData
         timelineBarChart.invalidate()
+        // 4. UPDATE BUBBLE CHART (Constellation)
+        val bubbleEntries = ArrayList<BubbleEntry>()
+        val groupedByApp = records.groupBy { it.app }
+        
+        var colorIndex = 0
+        val bubbleDataSets = ArrayList<com.github.mikephil.charting.interfaces.datasets.IBubbleDataSet>()
+
+        groupedByApp.forEach { (appName, appRecords) ->
+            val frequency = appRecords.size.toFloat() // X: How many times opened
+            val totalSecsSpent = appRecords.sumOf { it.durationSeconds }
+            val avgDuration = (totalSecsSpent / frequency) / 60f // Y: Avg minutes per session
+            val bubbleSize = totalSecsSpent.toFloat() // Size: Total time
+
+            val entry = BubbleEntry(frequency, avgDuration, bubbleSize, appName)
+            val dataSet = BubbleDataSet(listOf(entry), appName)
+            dataSet.color = colors[colorIndex % colors.size]
+            dataSet.valueTextColor = Color.TRANSPARENT // Hide ugly numbers on bubbles
+            bubbleDataSets.add(dataSet)
+            colorIndex++
+        }
+        
+        bubbleChartConstellation.data = BubbleData(bubbleDataSets)
+        bubbleChartConstellation.invalidate()
     }
 }
