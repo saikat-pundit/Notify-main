@@ -136,12 +136,6 @@ class MainActivity : AppCompatActivity() {
         spinnerUsageDevice = findViewById(R.id.spinnerUsageDevice)
         spinnerUsageDate = findViewById(R.id.spinnerUsageDate)
         btnUsageRefresh = findViewById(R.id.btnUsageRefresh)
-        chartManager = UsageChartManager(
-            this,
-            findViewById(R.id.donutChart), 
-            findViewById(R.id.appUsageBarChart),
-            findViewById(R.id.timelineBarChart)
-        )
         bubbleChartConstellation = findViewById(R.id.bubbleChartConstellation)
         flowBarChart = findViewById(R.id.flowBarChart)
         spinnerFlowFrom = findViewById(R.id.spinnerFlowFrom)
