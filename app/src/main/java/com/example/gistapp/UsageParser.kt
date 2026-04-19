@@ -8,8 +8,9 @@ data class UsageRecord(
     val device: String,
     val app: String,
     val date: String,
-    val startHour: Int, // NEW: Needed for the 24-hour stacked chart
-    val durationSeconds: Long
+    val startHour: Int,
+    val durationSeconds: Long,
+    val startTimeMs: Long
 )
 
 object UsageParser {
@@ -59,7 +60,8 @@ object UsageParser {
                             app = app,
                             date = niceDateFormatter.format(startDate), // Beautiful Date String
                             startHour = hourExtractor.format(startDate).toInt(), // Extract 0-23 Hour
-                            durationSeconds = duration
+                            durationSeconds = duration,
+                            startTimeMs = startDate.time
                         )
                     )
                 }
