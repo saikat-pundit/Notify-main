@@ -92,6 +92,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var flowBarChart: com.github.mikephil.charting.charts.HorizontalBarChart
     private lateinit var spinnerFlowFrom: Spinner
     private lateinit var spinnerFlowTo: Spinner
+    private var flowAvailableHours = listOf<Int>()
     private val autoRefreshHandler = Handler(Looper.getMainLooper())
     private val autoRefreshRunnable = object : Runnable {
         override fun run() {
@@ -506,18 +507,58 @@ class MainActivity : AppCompatActivity() {
     private fun filterAndUpdateCharts() {
         val selectedDevice = spinnerUsageDevice.selectedItem?.toString() ?: return
         val selectedDate = spinnerUsageDate.selectedItem?.toString() ?: return
-
         val filtered = allUsageRecords.filter { it.device == selectedDevice && it.date == selectedDate }
         chartManager.updateCharts(filtered)
         
-        // Populate Flow Spinners with available start hours for this specific date
-        val hours = filtered.map { "${it.startHour}:00" }.distinct().sorted()
-        if(hours.isNotEmpty() && spinnerFlowFrom.adapter == null) {
-            val hourAdapter = ArrayAdapter(this, R.layout.spinner_item, hours)
+        // 1. Populate Flow Spinners with AM/PM format
+        flowAvailableHours = filtered.map { it.startHour }.distinct().sorted()
+        
+        if (flowAvailableHours.isNotEmpty()) {
+            val hourLabels = flowAvailableHours.map { h -> 
+                val hr = if (h % 12 == 0) 12 else h % 12
+                val ampm = if (h < 12) "AM" else "PM"
+                "$hr:00 $ampm"
+            }
+            
+            // Unregister listeners temporarily to prevent infinite loops
+            spinnerFlowFrom.onItemSelectedListener = null
+            spinnerFlowTo.onItemSelectedListener = null
+
+            val hourAdapter = ArrayAdapter(this, R.layout.spinner_item, hourLabels)
             hourAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            
+            val prevFromPos = maxOf(0, spinnerFlowFrom.selectedItemPosition)
+            val prevToPos = maxOf(0, spinnerFlowTo.selectedItemPosition)
+
             spinnerFlowFrom.adapter = hourAdapter
             spinnerFlowTo.adapter = hourAdapter
-            spinnerFlowTo.setSelection(hours.size - 1) // Default "To" is the last hour
+
+            // Keep selections if valid, else default to first/last
+            if (spinnerFlowFrom.adapter.count > prevFromPos) spinnerFlowFrom.setSelection(prevFromPos)
+            if (spinnerFlowTo.adapter.count > prevToPos) spinnerFlowTo.setSelection(prevToPos)
+            else spinnerFlowTo.setSelection(hourLabels.size - 1)
+
+            // 2. Set Listeners to update the Waterfall Chart when changed
+            val flowUpdateListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
+                    val fromIdx = spinnerFlowFrom.selectedItemPosition
+                    val toIdx = spinnerFlowTo.selectedItemPosition
+                    if (fromIdx >= 0 && toIdx >= 0) {
+                        val startH = flowAvailableHours[fromIdx]
+                        val endH = flowAvailableHours[toIdx]
+                        chartManager.updateFlowChart(filtered, minOf(startH, endH), maxOf(startH, endH))
+                    }
+                }
+                override fun onNothingSelected(p0: AdapterView<*>?) {}
+            }
+            
+            spinnerFlowFrom.onItemSelectedListener = flowUpdateListener
+            spinnerFlowTo.onItemSelectedListener = flowUpdateListener
+
+            // 3. Trigger initial waterfall draw
+            val startH = flowAvailableHours[spinnerFlowFrom.selectedItemPosition]
+            val endH = flowAvailableHours[spinnerFlowTo.selectedItemPosition]
+            chartManager.updateFlowChart(filtered, minOf(startH, endH), maxOf(startH, endH))
         }
     }
     private fun updateSidebarMenu() {
