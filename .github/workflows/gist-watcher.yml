@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Check and update Gist
         env:
-          GITHUB_TOKEN: ${{ secrets.GIST_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.COMMAND_GIST_TOKEN }}
         run: |
           GIST_ID="ccc67afe0ea74bc98cfd654f5fa9905b"
           GIST_API_URL="https://api.github.com/gists/$GIST_ID"
